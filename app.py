@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-DATA_PATH = "../dummy_data.csv"
+DATA_PATH = "dummy_data.csv"
 
 
 def categorize_responses(col):
