@@ -2,7 +2,6 @@ absl-py==2.1.0
 anyio==4.8.0
 anywidget==0.9.15
 appdirs==1.4.4
-appnope @ file:///home/conda/feedstock_root/build_artifacts/appnope_1733332318622/work
 asgiref==3.8.1
 asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1733250440834/work
 astunparse==1.6.3
