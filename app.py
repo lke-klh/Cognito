@@ -3,7 +3,36 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-DATA_PATH = "dummy_data.csv"
+DATA_PATH = "pre_data.csv"
+
+CODE_TO_PROGRAM = {
+    "1": "Law Librarianship, Online",
+    "2": "Law Librarianship, Residential",
+    "3": "MLIS",
+    "4": "MLIS",
+    "5": "MSIM Online",
+    "6": "MSIM",
+    "7": "Museology",
+    "8": "PhD"
+}
+
+
+def get_filtered_data(input, df):
+
+    selected = input.selected_participant()
+
+    working_df = df.iloc[2:].copy()
+
+    if "GEN_01" not in working_df.columns:
+        return working_df
+
+    working_df["ProgramLabel"] = working_df["GEN_01"].astype(str).\
+        map(CODE_TO_PROGRAM)
+
+    if selected == "All Participants":
+        return working_df
+    else:
+        return working_df[working_df["ProgramLabel"] == selected]
 
 
 def categorize_responses(col):
@@ -122,11 +151,19 @@ app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h4("Filters"),
         ui.input_select("selected_participant", "Select Participant:",
-                        choices=["All Participants", "MSIM", "MSIM Online",
-                                 "MLIS", "PhD"],
-                        selected="All Participants"),
+                        choices=[
+                            "All Participants",
+                            "MSIM",
+                            "MSIM Online",
+                            "MLIS",
+                            "PhD",
+                            "Museology",
+                            "Law Librarianship, Online",
+                            "Law Librarianship, Residential"],
+                        selected="All Participants"
+                        ),
         ui.hr(),
-        "Filtering function yet to come"
+        "Choose the program for analyzing!"
     ),
     ui.panel_title("Survey Data Analysis"),
     ui.layout_columns(
@@ -148,28 +185,33 @@ def server(input, output, session):
     @output
     @render.ui
     def pie_chart():
-        return ui.HTML(generate_pie_chart(df).to_html(full_html=False))\
-            if df is not None else ui.p("No data available")
+        filtered_df = get_filtered_data(input, df)
+        return ui.HTML(generate_pie_chart(filtered_df).
+                       to_html(full_html=False)) if filtered_df is not None \
+            else ui.p("No data available")
 
     @output
     @render.ui
     def correlation_heatmap():
-        return ui.HTML(generate_heatmap(df).to_html(full_html=False))\
-            if df is not None else ui.p("No data available")
+        filtered_df = get_filtered_data(input, df)
+        return ui.HTML(generate_heatmap(filtered_df).to_html(full_html=False))\
+            if filtered_df is not None else ui.p("No data available")
 
     @output
     @render.ui
     def importance_bar_chart():
-        return ui.HTML(generate_importance_bar_chart(df).
-                       to_html(full_html=False)) if df is not None else ui.p(
-                           "No data available")
+        filtered_df = get_filtered_data(input, df)
+        return ui.HTML(generate_importance_bar_chart(filtered_df).
+                       to_html(full_html=False)) if filtered_df is not None \
+            else ui.p("No data available")
 
     @output
     @render.ui
     def trend_bar_chart():
-        return ui.HTML(generate_trend_bar_chart(df).
-                       to_html(full_html=False)) if df is not None else ui.p(
-                           "No data available")
+        filtered_df = get_filtered_data(input, df)
+        return ui.HTML(generate_trend_bar_chart(filtered_df).
+                       to_html(full_html=False)) if filtered_df is not None \
+            else ui.p("No data available")
 
 
 app = App(app_ui, server)
