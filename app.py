@@ -6,8 +6,8 @@ import plotly.express as px
 DATA_PATH = "pre_data.csv"
 
 CODE_TO_PROGRAM = {
-    "1": "Law Librarianship, Online",
-    "2": "Law Librarianship, Residential",
+    "1": "Law Librarianship",
+    "2": "Law Librarianship",
     "3": "MLIS",
     "4": "MLIS",
     "5": "MSIM Online",
