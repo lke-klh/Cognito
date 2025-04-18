@@ -158,8 +158,7 @@ app_ui = ui.page_sidebar(
                             "MLIS",
                             "PhD",
                             "Museology",
-                            "Law Librarianship, Online",
-                            "Law Librarianship, Residential"],
+                            "Law Librarianship"],
                         selected="All Participants"
                         ),
         ui.hr(),
