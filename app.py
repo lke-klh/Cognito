@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-DATA_PATH = "pre_data.csv"
+DATA_PATH = "dummy_data.csv"
 
 CODE_TO_PROGRAM = {
     "1": "Law Librarianship",
@@ -14,6 +14,15 @@ CODE_TO_PROGRAM = {
     "6": "MSIM",
     "7": "Museology",
     "8": "PhD"
+}
+
+LABEL_RENAMES = {
+    "WEB_04": "Information<br>Usefulness",
+    "WEB_06": "Information<br>Helpfulness",
+    "WEB_07": "Information<br>Completeness",
+    "WEB_08": "Information<br>Comprehensiveness",
+    "WEB_10": "Excitement",
+    "WEB_11": "Decision-<br>Making"
 }
 
 
@@ -42,7 +51,7 @@ def categorize_responses(col):
         (col > 0.5) & (col <= 2)  # Helpful
     ]
     labels = ["Not Helpful", "Neutral", "Helpful"]
-    return pd.Series(np.select(conditions, labels, default="Unknown"),
+    return pd.Series(np.select(conditions, labels, default="Missing Response"),
                      dtype="object")
 
 
@@ -64,11 +73,17 @@ def generate_heatmap(df):
     survey_corr = df[columns].dropna()
     survey_corr_numeric = survey_corr.apply(pd.to_numeric, errors="coerce")
     correlation_matrix = survey_corr_numeric.corr()
+    correlation_matrix.rename(index=LABEL_RENAMES, columns=LABEL_RENAMES,
+                              inplace=True)
 
-    fig = px.imshow(correlation_matrix, text_auto=True,
+    fig = px.imshow(correlation_matrix, text_auto=".2f",
                     color_continuous_scale=px.colors.sequential.Plasma_r,
-                    title="Correlation Matrix Heatmap")
-    fig.update_layout(coloraxis_colorbar=dict(thickness=15, len=0.5))
+                    title="Correlation Matrix Heatmap",
+                    aspect="auto")
+    fig.update_layout(
+        width=800,
+        height=600,
+        coloraxis_colorbar=dict(thickness=30, len=1))
 
     return fig
 
@@ -87,10 +102,15 @@ def generate_trend_bar_chart(df):
 
     categorized_responses = survey_processed.apply(categorize_responses)
     response_counts = categorized_responses.apply(pd.Series.value_counts)
+    response_counts = response_counts.T.rename(index=LABEL_RENAMES)
 
-    fig = px.bar(response_counts.T, barmode="group",
-                 labels={"x": "Aspects", "y": "Mean Importance"},
+    fig = px.bar(response_counts, barmode="group",
                  title="Trend of Each Question Being Helpful/Unhelpful")
+    fig.update_layout(
+        xaxis_tickangle=0,
+        xaxis_title="",
+        yaxis_title="Helpfulness Score"
+    )
 
     return fig
 
@@ -101,21 +121,33 @@ def generate_pie_chart(df):
 
     survey_processed = df[["WEB_04", "WEB_06", "WEB_07", "WEB_08", "WEB_10",
                            "WEB_11"]].apply(pd.to_numeric,
-                                            errors="coerce").dropna()
+                                            errors="coerce")
 
     for col in ["WEB_04", "WEB_06", "WEB_08", "WEB_10", "WEB_11"]:
         survey_processed[col] = survey_processed[col] - 3
         survey_processed["WEB_07"] = 6 - survey_processed["WEB_07"] - 3
 
     survey_processed["Overall_Mean"] = survey_processed.mean(axis=1,
-                                                             numeric_only=True)
+                                                             skipna=True)
     survey_processed["Overall_Category"] = categorize_responses(
         survey_processed["Overall_Mean"])
     overall_counts = survey_processed["Overall_Category"].value_counts()
+    if overall_counts.empty:
+        return px.pie(title="No data available for<br>\
+selected participant group.")
 
     fig = px.pie(names=overall_counts.index, values=overall_counts.values,
-                 title="Overall Perception of Website Helpfulness")
+                 title="Overall Perception of<br>Website Helpfulness")
 
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5
+        )
+    )
     return fig
 
 
@@ -167,13 +199,14 @@ app_ui = ui.page_sidebar(
     ui.panel_title("Survey Data Analysis"),
     ui.layout_columns(
         ui.card(ui.output_ui("pie_chart")),
-        ui.card(ui.output_ui("trend_bar_chart")),
+        ui.card(ui.output_ui("importance_bar_chart")),
         col_widths=(4, 8)
     ),
     ui.layout_columns(
-        ui.card(ui.output_ui("importance_bar_chart")),
-        ui.card(ui.output_ui("correlation_heatmap")),
-        col_widths=(8, 4)
+        ui.card(ui.output_ui("trend_bar_chart"))
+    ),
+    ui.layout_columns(
+        ui.card(ui.output_ui("correlation_heatmap"))
     )
 )
 
