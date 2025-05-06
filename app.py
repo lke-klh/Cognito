@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-DATA_PATH = "dummy_data.csv"
+DATA_PATH = "pre_data.csv"
 
 CODE_TO_PROGRAM = {
     "1": "Law Librarianship",
@@ -23,6 +23,14 @@ LABEL_RENAMES = {
     "WEB_08": "Information<br>Comprehensiveness",
     "WEB_10": "Excitement",
     "WEB_11": "Decision-<br>Making"
+}
+
+DEMO_03_LABELS = {
+    "1": "Professional Employment",
+    "2": "Further Academic Study",
+    "3": "Start Own Business",
+    "4": "Not Sure",
+    "5": "Other"
 }
 
 
@@ -62,32 +70,6 @@ def load_data():
         return None
 
 
-def generate_heatmap(df):
-    if df is None:
-        return None
-
-    columns = ["WEB_06", "WEB_07", "WEB_08", "WEB_10", "WEB_11"]
-    if not all(col in df.columns for col in columns):
-        return None
-
-    survey_corr = df[columns].dropna()
-    survey_corr_numeric = survey_corr.apply(pd.to_numeric, errors="coerce")
-    correlation_matrix = survey_corr_numeric.corr()
-    correlation_matrix.rename(index=LABEL_RENAMES, columns=LABEL_RENAMES,
-                              inplace=True)
-
-    fig = px.imshow(correlation_matrix, text_auto=".2f",
-                    color_continuous_scale=px.colors.sequential.Plasma_r,
-                    title="Correlation Matrix Heatmap",
-                    aspect="auto")
-    fig.update_layout(
-        width=800,
-        height=600,
-        coloraxis_colorbar=dict(thickness=30, len=1))
-
-    return fig
-
-
 def generate_trend_bar_chart(df):
     if df is None:
         return None
@@ -107,7 +89,7 @@ def generate_trend_bar_chart(df):
     fig = px.bar(response_counts, barmode="group",
                  title="Trend of Each Question Being Helpful/Unhelpful")
     fig.update_layout(
-        xaxis_tickangle=0,
+        xaxis_tickangle=25,
         xaxis_title="",
         yaxis_title="Helpfulness Score"
     )
@@ -179,6 +161,38 @@ def generate_importance_bar_chart(df):
     return fig
 
 
+def generate_demo03_pie_chart(df):
+    if df is None:
+        return px.pie(title="No data available for this visualization.")
+
+    demo_data = df["DEMO_03"].astype(str)
+    demo_data_labeled = demo_data.map(DEMO_03_LABELS).\
+        fillna("Missing Response")
+
+    demo_counts = demo_data_labeled.value_counts()
+
+    if demo_counts.empty:
+        return px.pie(title="No data available for this visualization.")
+
+    fig = px.pie(
+        names=demo_counts.index,
+        values=demo_counts.values,
+        title="Distribution of Primary Goal<br>after Graduation"
+    )
+
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5
+        )
+    )
+
+    return fig
+
+
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h4("Filters"),
@@ -198,15 +212,26 @@ app_ui = ui.page_sidebar(
     ),
     ui.panel_title("Survey Data Analysis"),
     ui.layout_columns(
-        ui.card(ui.output_ui("pie_chart")),
-        ui.card(ui.output_ui("importance_bar_chart")),
+        ui.card(
+            ui.output_ui("pie_chart"),
+            ui.p("This pie chart shows the overall perception of \
+the website's helpfulness based on participant responses.")),
+        ui.card(
+            ui.output_ui("importance_bar_chart"),
+            ui.p("This bar chart displays the average importance ratings \
+participants assigned to various aspects of grad school.")),
         col_widths=(4, 8)
     ),
     ui.layout_columns(
-        ui.card(ui.output_ui("trend_bar_chart"))
-    ),
-    ui.layout_columns(
-        ui.card(ui.output_ui("correlation_heatmap"))
+        ui.card(
+            ui.output_ui("trend_bar_chart"),
+            ui.p("This bar chart highlights how each survey question was \
+rated in terms of helpfulness or unhelpfulness.")),
+        ui.card(
+            ui.output_ui("demo03_pie_chart"),
+            ui.p("This pie chart demonstrates the distribution of students' \
+primary goal after graduations.")),
+        col_widths=(8, 4)
     )
 )
 
@@ -224,13 +249,6 @@ def server(input, output, session):
 
     @output
     @render.ui
-    def correlation_heatmap():
-        filtered_df = get_filtered_data(input, df)
-        return ui.HTML(generate_heatmap(filtered_df).to_html(full_html=False))\
-            if filtered_df is not None else ui.p("No data available")
-
-    @output
-    @render.ui
     def importance_bar_chart():
         filtered_df = get_filtered_data(input, df)
         return ui.HTML(generate_importance_bar_chart(filtered_df).
@@ -244,6 +262,14 @@ def server(input, output, session):
         return ui.HTML(generate_trend_bar_chart(filtered_df).
                        to_html(full_html=False)) if filtered_df is not None \
             else ui.p("No data available")
+
+    @output
+    @render.ui
+    def demo03_pie_chart():
+        filtered_df = get_filtered_data(input, df)
+        return ui.HTML(generate_demo03_pie_chart(filtered_df).
+                       to_html(full_html=False)) \
+            if filtered_df is not None else ui.p("No data available")
 
 
 app = App(app_ui, server)
