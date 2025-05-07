@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-DATA_PATH = "pre_data.csv"
+DATA_PATH = "final_data.csv"
 
 CODE_TO_PROGRAM = {
     "1": "Law Librarianship",
@@ -217,16 +217,16 @@ app_ui = ui.page_sidebar(
             ui.p("This pie chart shows the overall perception of \
 the website's helpfulness based on participant responses.")),
         ui.card(
-            ui.output_ui("importance_bar_chart"),
-            ui.p("This bar chart displays the average importance ratings \
-participants assigned to various aspects of grad school.")),
+            ui.output_ui("trend_bar_chart"),
+            ui.p("This bar chart highlights how each survey question was \
+rated in terms of helpfulness or unhelpfulness.")),
         col_widths=(4, 8)
     ),
     ui.layout_columns(
         ui.card(
-            ui.output_ui("trend_bar_chart"),
-            ui.p("This bar chart highlights how each survey question was \
-rated in terms of helpfulness or unhelpfulness.")),
+            ui.output_ui("importance_bar_chart"),
+            ui.p("This bar chart displays the average importance ratings \
+participants assigned to various aspects of grad school.")),
         ui.card(
             ui.output_ui("demo03_pie_chart"),
             ui.p("This pie chart demonstrates the distribution of students' \
