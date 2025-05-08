@@ -33,6 +33,11 @@ DEMO_03_LABELS = {
     "5": "Other"
 }
 
+WEB_01_LABELS = {
+    "1": "Yes",
+    "2": "No"
+}
+
 
 def get_filtered_data(input, df):
 
@@ -192,7 +197,42 @@ def generate_demo03_pie_chart(df):
 
     return fig
 
+def generate_web01_pie_chart(df):
+    if df is None:
+        return px.pie(title="No data available for this visualization.")
 
+    demo_data = df["WEB_01"].astype(str)
+    demo_data_labeled = demo_data.map(WEB_01_LABELS).\
+        fillna("Missing Response")
+
+    demo_counts = demo_data_labeled.value_counts()
+
+    if demo_counts.empty:
+        return px.pie(title="No data available for this visualization.")
+
+    fig = px.pie(
+        names=demo_counts.index,
+        values=demo_counts.values,
+        title="Use of Website Prior to Survey"
+    )
+
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5
+        )
+    )
+
+    return fig
+
+
+
+
+# app_ui = ui.page_fluid(
+#     title="Survey Data Analysis",
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h4("Filters"),
@@ -211,28 +251,51 @@ app_ui = ui.page_sidebar(
         "Choose the program for analyzing!"
     ),
     ui.panel_title("Survey Data Analysis"),
-    ui.layout_columns(
-        ui.card(
-            ui.output_ui("pie_chart"),
-            ui.p("This pie chart shows the overall perception of \
-the website's helpfulness based on participant responses.")),
-        ui.card(
-            ui.output_ui("trend_bar_chart"),
-            ui.p("This bar chart highlights how each survey question was \
-rated in terms of helpfulness or unhelpfulness.")),
+    ui.div(
+        ui.layout_columns(
+            ui.card(
+                ui.output_ui("pie_chart"),
+                ui.p("This pie chart shows the overall perception of \
+    the website's helpfulness based on participant responses.")),
+            ui.card(
+                ui.output_ui("trend_bar_chart"),
+                ui.p("This bar chart highlights how each survey question was \
+    rated in terms of helpfulness or unhelpfulness."),
+                ui.p("List of questions corresponding to metrics:"),
+                ui.tags.ul(
+                    *[
+                        ui.tags.li("Information Usefulness: It was easy to navigate the iSchool website to find the information I was seeking."),
+                        ui.tags.li("Information Helpfulness: The information on this website would be helpful to me as a newly admitted student."),
+                        ui.tags.li("Information Completeness: The website is missing information that would help me as a new student."),
+                        ui.tags.li("Information Comprehensiveness: I was able to find all the information I would need as a new student on the website."),
+                        ui.tags.li("Excitement: The website makes me excited about the iSchool Graduate programs."),
+                        ui.tags.li("Decision-Making: The website would help me to decide if the iSchool is the right school for me.")
+                    ],
+                    class_="small"  # Optional: makes text slightly smaller
+                )
+            ),
         col_widths=(4, 8)
+        ),
+        class_="mb-4"
     ),
-    ui.layout_columns(
-        ui.card(
-            ui.output_ui("importance_bar_chart"),
-            ui.p("This bar chart displays the average importance ratings \
-participants assigned to various aspects of grad school.")),
-        ui.card(
-            ui.output_ui("demo03_pie_chart"),
+    ui.div(
+        ui.layout_columns(
+            ui.card(
+                ui.output_ui("importance_bar_chart"),
+                ui.p("This bar chart displays the average importance ratings \
+    participants assigned to various aspects of grad school.")),
+            ui.card(
+                ui.output_ui("demo03_pie_chart"),
+                ui.p("This pie chart demonstrates the distribution of students' \
+    primary goal after graduations.")),
+            col_widths=(8, 4)
+        ),
+        class_="mb-4"
+    ),
+            ui.card(
+            ui.output_ui("web01_pie_chart"),
             ui.p("This pie chart demonstrates the distribution of students' \
-primary goal after graduations.")),
-        col_widths=(8, 4)
-    )
+            use of website prior to the survey."))
 )
 
 
@@ -268,6 +331,14 @@ def server(input, output, session):
     def demo03_pie_chart():
         filtered_df = get_filtered_data(input, df)
         return ui.HTML(generate_demo03_pie_chart(filtered_df).
+                       to_html(full_html=False)) \
+            if filtered_df is not None else ui.p("No data available")
+    
+    @output
+    @render.ui
+    def web01_pie_chart():
+        filtered_df = get_filtered_data(input, df)
+        return ui.HTML(generate_web01_pie_chart(filtered_df).
                        to_html(full_html=False)) \
             if filtered_df is not None else ui.p("No data available")
 
