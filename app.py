@@ -16,15 +16,6 @@ CODE_TO_PROGRAM = {
     "8": "PhD"
 }
 
-LABEL_RENAMES = {
-    "WEB_04": "Information<br>Usefulness",
-    "WEB_06": "Information<br>Helpfulness",
-    "WEB_07": "Information<br>Completeness",
-    "WEB_08": "Information<br>Comprehensiveness",
-    "WEB_10": "Excitement",
-    "WEB_11": "Decision-<br>Making"
-}
-
 DEMO_03_LABELS = {
     "1": "Professional Employment",
     "2": "Further Academic Study",
@@ -59,11 +50,11 @@ def get_filtered_data(input, df):
 
 def categorize_responses(col):
     conditions = [
-        (col >= -2) & (col < -0.5),  # Not Helpful
+        (col >= -2) & (col < -0.5),  # Disagree
         (col >= -0.5) & (col <= 0.5),  # Neutral
-        (col > 0.5) & (col <= 2)  # Helpful
+        (col > 0.5) & (col <= 2)  # Agree
     ]
-    labels = ["Not Helpful", "Neutral", "Helpful"]
+    labels = ["Disagree", "Neutral", "Agree"]
     return pd.Series(np.select(conditions, labels, default="Missing Response"),
                      dtype="object")
 
@@ -75,7 +66,7 @@ def load_data():
         return None
 
 
-def generate_trend_bar_chart(df):
+def generate_bar_chart(df):
     if df is None:
         return None
 
@@ -83,20 +74,35 @@ def generate_trend_bar_chart(df):
                            "WEB_11"]].apply(pd.to_numeric,
                                             errors="coerce").dropna()
 
-    for col in ["WEB_04", "WEB_06", "WEB_08", "WEB_10", "WEB_11"]:
+    for col in ["WEB_04", "WEB_06", "WEB_07", "WEB_08", "WEB_10", "WEB_11"]:
         survey_processed[col] = survey_processed[col] - 3
-        survey_processed["WEB_07"] = 6 - survey_processed["WEB_07"] - 3
+
+    survey_processed = survey_processed.rename(columns={
+        "WEB_04": "The website is easy to navigate ",
+        "WEB_06": "The information is helpful ",
+        "WEB_07": "The website is missing information ",
+        "WEB_08": "The information is comprehensive ",
+        "WEB_10": "It makes me feel excited about the program ",
+        "WEB_11": "It helps me decide to commit to UW "
+    })
 
     categorized_responses = survey_processed.apply(categorize_responses)
-    response_counts = categorized_responses.apply(pd.Series.value_counts)
-    response_counts = response_counts.T.rename(index=LABEL_RENAMES)
+    response_counts = categorized_responses.apply(pd.Series.value_counts).T
+    response_percent = response_counts.div(response_counts.sum(axis=1),
+                                           axis=0) * 100
 
-    fig = px.bar(response_counts, barmode="group",
-                 title="Trend of Each Question Being Helpful/Unhelpful")
+    fig = px.bar(response_percent, orientation="h", barmode="stack",
+                 labels={"value": "Percentage (%)", "index": "Metric"},
+                 title="How do you feel about the website?")
     fig.update_layout(
-        xaxis_tickangle=25,
-        xaxis_title="",
-        yaxis_title="Helpfulness Score"
+        yaxis_title="",
+        xaxis_title="Answer's Percentage",
+        xaxis=dict(
+            tickmode="linear",
+            tick0=0,
+            dtick=20,
+            range=[0, 100]
+        )
     )
 
     return fig
@@ -197,6 +203,7 @@ def generate_demo03_pie_chart(df):
 
     return fig
 
+
 def generate_web01_pie_chart(df):
     if df is None:
         return px.pie(title="No data available for this visualization.")
@@ -229,10 +236,6 @@ def generate_web01_pie_chart(df):
     return fig
 
 
-
-
-# app_ui = ui.page_fluid(
-#     title="Survey Data Analysis",
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h4("Filters"),
@@ -258,23 +261,11 @@ app_ui = ui.page_sidebar(
                 ui.p("This pie chart shows the overall perception of \
     the website's helpfulness based on participant responses.")),
             ui.card(
-                ui.output_ui("trend_bar_chart"),
+                ui.output_ui("bar_chart"),
                 ui.p("This bar chart highlights how each survey question was \
-    rated in terms of helpfulness or unhelpfulness."),
-                ui.p("List of questions corresponding to metrics:"),
-                ui.tags.ul(
-                    *[
-                        ui.tags.li("Information Usefulness: It was easy to navigate the iSchool website to find the information I was seeking."),
-                        ui.tags.li("Information Helpfulness: The information on this website would be helpful to me as a newly admitted student."),
-                        ui.tags.li("Information Completeness: The website is missing information that would help me as a new student."),
-                        ui.tags.li("Information Comprehensiveness: I was able to find all the information I would need as a new student on the website."),
-                        ui.tags.li("Excitement: The website makes me excited about the iSchool Graduate programs."),
-                        ui.tags.li("Decision-Making: The website would help me to decide if the iSchool is the right school for me.")
-                    ],
-                    class_="small"  # Optional: makes text slightly smaller
-                )
+    rated agree or disagree in terms of proportion.")
             ),
-        col_widths=(4, 8)
+            col_widths=(4, 8)
         ),
         class_="mb-4"
     ),
@@ -286,16 +277,16 @@ app_ui = ui.page_sidebar(
     participants assigned to various aspects of grad school.")),
             ui.card(
                 ui.output_ui("demo03_pie_chart"),
-                ui.p("This pie chart demonstrates the distribution of students' \
-    primary goal after graduations.")),
+                ui.p("This pie chart demonstrates the distribution of \
+    students' primary goal after graduations.")),
             col_widths=(8, 4)
         ),
         class_="mb-4"
     ),
-            ui.card(
-            ui.output_ui("web01_pie_chart"),
-            ui.p("This pie chart demonstrates the distribution of students' \
-            use of website prior to the survey."))
+    ui.card(
+        ui.output_ui("web01_pie_chart"),
+        ui.p("This pie chart demonstrates the distribution of students' \
+    use of website prior to the survey."))
 )
 
 
@@ -320,9 +311,9 @@ def server(input, output, session):
 
     @output
     @render.ui
-    def trend_bar_chart():
+    def bar_chart():
         filtered_df = get_filtered_data(input, df)
-        return ui.HTML(generate_trend_bar_chart(filtered_df).
+        return ui.HTML(generate_bar_chart(filtered_df).
                        to_html(full_html=False)) if filtered_df is not None \
             else ui.p("No data available")
 
@@ -333,7 +324,7 @@ def server(input, output, session):
         return ui.HTML(generate_demo03_pie_chart(filtered_df).
                        to_html(full_html=False)) \
             if filtered_df is not None else ui.p("No data available")
-    
+
     @output
     @render.ui
     def web01_pie_chart():
