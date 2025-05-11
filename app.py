@@ -6,9 +6,9 @@ import plotly.express as px
 DATA_PATH = "final_data.csv"
 
 CODE_TO_PROGRAM = {
-    "1": "Law Librarianship",
+    "1": "Law Librarianship Online",
     "2": "Law Librarianship",
-    "3": "MLIS",
+    "3": "MLIS Online",
     "4": "MLIS",
     "5": "MSIM Online",
     "6": "MSIM",
@@ -32,7 +32,10 @@ WEB_01_LABELS = {
 
 def get_filtered_data(input, df):
 
-    selected = input.selected_participant()
+    selected_program = input.selected_participant()
+    selected_mode = input.delivery_mode()
+    selected_international = input.international_status()
+    selected_relocation = input.relocation_status()
 
     working_df = df.iloc[2:].copy()
 
@@ -42,10 +45,28 @@ def get_filtered_data(input, df):
     working_df["ProgramLabel"] = working_df["GEN_01"].astype(str).\
         map(CODE_TO_PROGRAM)
 
-    if selected == "All Participants":
-        return working_df
-    else:
-        return working_df[working_df["ProgramLabel"] == selected]
+    if selected_program != "All Participants":
+        working_df = working_df[working_df["ProgramLabel"] == selected_program]
+        if selected_mode == "Online":
+            working_df = working_df[working_df["ProgramLabel"].fillna("").
+                                    str.endswith("Online")]
+        elif selected_mode == "Residential":
+            working_df = working_df[~working_df["ProgramLabel"].fillna("").
+                                    str.endswith("Online")]
+
+    if "DEMO_01" in working_df.columns:
+        if selected_international == "International":
+            working_df = working_df[working_df["DEMO_01"].astype(str) == "1"]
+        elif selected_international == "Domestic":
+            working_df = working_df[working_df["DEMO_01"].astype(str) == "2"]
+
+    if "GEN_03" in working_df.columns:
+        if selected_relocation == "Yes":
+            working_df = working_df[working_df["GEN_03"].astype(str) == "1"]
+        elif selected_relocation == "No":
+            working_df = working_df[working_df["GEN_03"].astype(str) == "2"]
+
+    return working_df
 
 
 def categorize_responses(col):
@@ -118,7 +139,7 @@ def generate_pie_chart(df):
 
     for col in ["WEB_04", "WEB_06", "WEB_08", "WEB_10", "WEB_11"]:
         survey_processed[col] = survey_processed[col] - 3
-        survey_processed["WEB_07"] = 6 - survey_processed["WEB_07"] - 3
+    survey_processed["WEB_07"] = 6 - survey_processed["WEB_07"] - 3
 
     survey_processed["Overall_Mean"] = survey_processed.mean(axis=1,
                                                              skipna=True)
@@ -126,7 +147,7 @@ def generate_pie_chart(df):
         survey_processed["Overall_Mean"])
     overall_counts = survey_processed["Overall_Category"].value_counts()
     if overall_counts.empty:
-        return px.pie(title="No data available for<br>\
+        return px.pie(title="No enough data available for<br>\
 selected participant group.")
 
     fig = px.pie(names=overall_counts.index, values=overall_counts.values,
@@ -245,11 +266,22 @@ app_ui = ui.page_sidebar(
                             "MSIM",
                             "MSIM Online",
                             "MLIS",
+                            "MLIS Online",
                             "PhD",
                             "Museology",
-                            "Law Librarianship"],
+                            "Law Librarianship",
+                            "Law Librarianship Online"],
                         selected="All Participants"
                         ),
+        ui.input_select("delivery_mode", "Online vs. Residential",
+                        choices=["All", "Online", "Residential"],
+                        selected="All"),
+        ui.input_select("international_status", "International vs. Domestic",
+                        choices=["All", "International", "Domestic"],
+                        selected="All"),
+        ui.input_select("relocation_status", "Need to Relocate:",
+                        choices=["All", "Yes", "No"],
+                        selected="All"),
         ui.hr(),
         "Choose the program for analyzing!"
     ),
