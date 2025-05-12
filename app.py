@@ -151,7 +151,7 @@ def generate_pie_chart(df):
 selected participant group.")
 
     fig = px.pie(names=overall_counts.index, values=overall_counts.values,
-                 title="Overall Perception of<br>Website Helpfulness")
+                 title="Is this website helpful in general?")
 
     fig.update_layout(
         legend=dict(
