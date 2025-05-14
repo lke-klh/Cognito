@@ -42,16 +42,19 @@ def get_filtered_data(input, df):
     if "GEN_01" not in working_df.columns:
         return working_df
 
-    working_df["ProgramLabel"] = working_df["GEN_01"].astype(str).\
-        map(CODE_TO_PROGRAM)
+    working_df["GEN_01_List"] = working_df["GEN_01"].astype(str).str.split(",")
+    working_df = working_df.explode("GEN_01_List")
+    working_df["ProgramLabel"] = working_df["GEN_01_List"].\
+        str.strip().map(CODE_TO_PROGRAM)
 
     if selected_program != "All Participants":
         working_df = working_df[working_df["ProgramLabel"] == selected_program]
+    else:
         if selected_mode == "Online":
-            working_df = working_df[working_df["ProgramLabel"].fillna("").
+            working_df = working_df[working_df["ProgramLabel"].
                                     str.endswith("Online")]
         elif selected_mode == "Residential":
-            working_df = working_df[~working_df["ProgramLabel"].fillna("").
+            working_df = working_df[~working_df["ProgramLabel"].
                                     str.endswith("Online")]
 
     if "DEMO_01" in working_df.columns:
@@ -137,20 +140,21 @@ def generate_pie_chart(df):
                            "WEB_11"]].apply(pd.to_numeric,
                                             errors="coerce")
 
-    for col in ["WEB_04", "WEB_06", "WEB_08", "WEB_10", "WEB_11"]:
+    survey_cols = ["WEB_04", "WEB_06", "WEB_08", "WEB_10", "WEB_11"]
+    for col in survey_cols:
         survey_processed[col] = survey_processed[col] - 3
     survey_processed["WEB_07"] = 6 - survey_processed["WEB_07"] - 3
 
-    survey_processed["Overall_Mean"] = survey_processed.mean(axis=1,
-                                                             skipna=True)
-    survey_processed["Overall_Category"] = categorize_responses(
-        survey_processed["Overall_Mean"])
-    overall_counts = survey_processed["Overall_Category"].value_counts()
-    if overall_counts.empty:
-        return px.pie(title="No enough data available for<br>\
-selected participant group.")
+    melted = survey_processed.melt(value_vars=survey_cols, value_name="Score")
+    melted = melted.dropna(subset=["Score"])
 
-    fig = px.pie(names=overall_counts.index, values=overall_counts.values,
+    melted["Category"] = categorize_responses(melted["Score"])
+
+    response_counts = melted["Category"].value_counts()
+    if response_counts.empty:
+        return px.pie(title="No data available for selected group.")
+
+    fig = px.pie(names=response_counts.index, values=response_counts.values,
                  title="Is this website helpful in general?")
 
     fig.update_layout(
