@@ -189,7 +189,9 @@ def generate_importance_bar_chart(df):
         "GEN_05_10": "Tuition"
     }
 
-    gen_05_data_avg = gen_05_data_avg.rename(index=column_descriptions)
+    gen_05_data_avg = gen_05_data_avg.rename(index=column_descriptions).\
+        sort_values(ascending=False)
+
     fig = px.bar(x=gen_05_data_avg.index, y=gen_05_data_avg.values,
                  labels={"x": "Aspects", "y": "Mean Importance"},
                  title="Importance Scores for Grad School Aspects")
