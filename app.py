@@ -9,9 +9,9 @@ CODE_TO_PROGRAM = {
     "1": "Law Librarianship Online",
     "2": "Law Librarianship",
     "3": "MLIS Online",
-    "4": "MLIS Residential",
+    "4": "MLIS",
     "5": "MSIM Online",
-    "6": "MSIM Residential",
+    "6": "MSIM",
     "7": "Museology",
     "8": "PhD"
 }
@@ -260,9 +260,9 @@ app_ui = ui.page_sidebar(
         ui.input_select("selected_participant", "Select Program:",
                         choices=[
                             "All Participants",
-                            "MSIM",
+                            "MSIM Residential",
                             "MSIM Online",
-                            "MLIS",
+                            "MLIS Residential",
                             "MLIS Online",
                             "PhD",
                             "Museology",
