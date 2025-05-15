@@ -257,7 +257,7 @@ def generate_web01_pie_chart(df):
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h4("Filters"),
-        ui.input_select("selected_participant", "Select Participant:",
+        ui.input_select("selected_participant", "Select Program:",
                         choices=[
                             "All Participants",
                             "MSIM",
