@@ -9,9 +9,9 @@ CODE_TO_PROGRAM = {
     "1": "Law Librarianship Online",
     "2": "Law Librarianship",
     "3": "MLIS Online",
-    "4": "MLIS",
+    "4": "MLIS Residential",
     "5": "MSIM Online",
-    "6": "MSIM",
+    "6": "MSIM Residential",
     "7": "Museology",
     "8": "PhD"
 }
@@ -33,7 +33,6 @@ WEB_01_LABELS = {
 def get_filtered_data(input, df):
 
     selected_program = input.selected_participant()
-    selected_mode = input.delivery_mode()
     selected_international = input.international_status()
     selected_relocation = input.relocation_status()
 
@@ -49,13 +48,6 @@ def get_filtered_data(input, df):
 
     if selected_program != "All Participants":
         working_df = working_df[working_df["ProgramLabel"] == selected_program]
-    else:
-        if selected_mode == "Online":
-            working_df = working_df[working_df["ProgramLabel"].
-                                    str.endswith("Online")]
-        elif selected_mode == "Residential":
-            working_df = working_df[~working_df["ProgramLabel"].
-                                    str.endswith("Online")]
 
     if "DEMO_01" in working_df.columns:
         if selected_international == "International":
@@ -278,9 +270,6 @@ app_ui = ui.page_sidebar(
                             "Law Librarianship Online"],
                         selected="All Participants"
                         ),
-        ui.input_select("delivery_mode", "Online vs. Residential",
-                        choices=["All", "Online", "Residential"],
-                        selected="All"),
         ui.input_select("international_status", "International vs. Domestic",
                         choices=["All", "International", "Domestic"],
                         selected="All"),
