@@ -9,9 +9,9 @@ CODE_TO_PROGRAM = {
     "1": "Law Librarianship Online",
     "2": "Law Librarianship",
     "3": "MLIS Online",
-    "4": "MLIS",
+    "4": "MLIS Residential",
     "5": "MSIM Online",
-    "6": "MSIM",
+    "6": "MSIM Residential",
     "7": "Museology",
     "8": "PhD"
 }
