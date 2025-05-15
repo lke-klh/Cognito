@@ -37,7 +37,7 @@ def get_filtered_data(input, df):
     selected_international = input.international_status()
     selected_relocation = input.relocation_status()
 
-    working_df = df.iloc[2:].copy()
+    working_df = df.copy()
 
     if "GEN_01" not in working_df.columns:
         return working_df
@@ -85,9 +85,9 @@ def categorize_responses(col):
 
 def load_data():
     if DATA_PATH.endswith(".csv"):
-        return pd.read_csv(DATA_PATH)
-    else:
-        return None
+        df = pd.read_csv(DATA_PATH)
+        return df.iloc[2:].copy()
+    return None
 
 
 def generate_bar_chart(df):
@@ -133,7 +133,7 @@ def generate_bar_chart(df):
 
 
 def generate_pie_chart(df):
-    if df is None:
+    if df is None or df.empty:
         return None
 
     survey_processed = df[["WEB_04", "WEB_06", "WEB_07", "WEB_08", "WEB_10",
@@ -145,16 +145,15 @@ def generate_pie_chart(df):
         survey_processed[col] = survey_processed[col] - 3
     survey_processed["WEB_07"] = 6 - survey_processed["WEB_07"] - 3
 
-    melted = survey_processed.melt(value_vars=survey_cols, value_name="Score")
-    melted = melted.dropna(subset=["Score"])
+    overall_scores = survey_processed.mean(axis=1)
+    categories = categorize_responses(overall_scores)
+    counts = categories.value_counts()
 
-    melted["Category"] = categorize_responses(melted["Score"])
-
-    response_counts = melted["Category"].value_counts()
-    if response_counts.empty:
+    if counts.empty:
         return px.pie(title="No data available for selected group.")
 
-    fig = px.pie(names=response_counts.index, values=response_counts.values,
+    fig = px.pie(names=counts.index,
+                 values=counts.values,
                  title="Is this website helpful in general?")
 
     fig.update_layout(
@@ -200,7 +199,7 @@ def generate_importance_bar_chart(df):
 
 
 def generate_demo03_pie_chart(df):
-    if df is None:
+    if df is None or df.empty:
         return px.pie(title="No data available for this visualization.")
 
     demo_data = df["DEMO_03"].astype(str)
@@ -232,7 +231,7 @@ def generate_demo03_pie_chart(df):
 
 
 def generate_web01_pie_chart(df):
-    if df is None:
+    if df is None or df.empty:
         return px.pie(title="No data available for this visualization.")
 
     demo_data = df["WEB_01"].astype(str)
