@@ -279,8 +279,8 @@ app_ui = ui.page_sidebar(
         ui.hr(),
         ui.p("Choose what to analyze!"),
         ui.p("The first filter is used for each single program. For example, "
-             "if it mentions `MISM online`, it will not contain information "
-             "about the MLIS residential."),
+             "if it mentions `MSIM online`, it will not contain information "
+             "about the MSIM residential."),
         ui.p("The second filter is for filtering international students and "
              "domestic students."),
         ui.p("The third filter helps in seeing the different responses between"
