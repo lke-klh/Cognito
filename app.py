@@ -16,17 +16,18 @@ CODE_TO_PROGRAM = {
     "8": "PhD"
 }
 
-DEMO_03_LABELS = {
-    "1": "Professional Employment",
-    "2": "Further Academic Study",
-    "3": "Start Own Business",
-    "4": "Not Sure",
-    "5": "Other"
-}
-
 WEB_01_LABELS = {
     "1": "Yes",
     "2": "No"
+}
+
+WEB_02_LABELS = {
+    "1": "Orientation events",
+    "3": "UW campus tours",
+    "4": "Advising and support resources",
+    "5": "Other",
+    "7": "Class scheduling suggestions",
+    "9": "Course descriptions"
 }
 
 
@@ -130,7 +131,7 @@ def generate_pie_chart(df):
 
     survey_processed = df[["WEB_04", "WEB_06", "WEB_07", "WEB_08", "WEB_10",
                            "WEB_11"]].apply(pd.to_numeric,
-                                            errors="coerce")
+                                            errors="coerce").dropna()
 
     survey_cols = ["WEB_04", "WEB_06", "WEB_08", "WEB_10", "WEB_11"]
     for col in survey_cols:
@@ -181,42 +182,41 @@ def generate_importance_bar_chart(df):
     }
 
     gen_05_data_avg = gen_05_data_avg.rename(index=column_descriptions).\
-        sort_values(ascending=False)
+        sort_values(ascending=True)
 
-    fig = px.bar(x=gen_05_data_avg.index, y=gen_05_data_avg.values,
-                 labels={"x": "Aspects", "y": "Mean Importance"},
-                 title="Importance Scores for Grad School Aspects")
+    fig = px.bar(x=gen_05_data_avg.values, y=gen_05_data_avg.index,
+                 text=gen_05_data_avg.round(2).values,
+                 labels={"x": "Mean Importance Score", "y": ""},
+                 title="Average Importance Scores for Grad School Information")
 
     return fig
 
 
-def generate_demo03_pie_chart(df):
+def generate_web02_bar_chart(df):
     if df is None or df.empty:
-        return px.pie(title="No data available for this visualization.")
+        return px.bar(title="No data available for this visualization.")
 
-    demo_data = df["DEMO_03"].astype(str)
-    demo_data_labeled = demo_data.map(DEMO_03_LABELS).\
-        fillna("Missing Response")
+    web02_split = df["WEB_02"].dropna().astype(str).str.split(",")
+    web02_exploded = web02_split.explode().str.strip()
 
-    demo_counts = demo_data_labeled.value_counts()
+    web02_labeled = web02_exploded.map(WEB_02_LABELS)
 
-    if demo_counts.empty:
-        return px.pie(title="No data available for this visualization.")
+    web02_counts = web02_labeled.value_counts().sort_values(ascending=True)
 
-    fig = px.pie(
-        names=demo_counts.index,
-        values=demo_counts.values,
-        title="Distribution of Primary Goal<br>after Graduation"
+    if web02_counts.empty:
+        return px.bar(title="No data available for this visualization.")
+
+    fig = px.bar(
+        x=web02_counts.values,
+        y=web02_counts.index,
+        text=web02_counts.values,
+        labels={"x": "Number of Responses", "y": "Information Category"},
+        title="What Information Do Students Look for First?"
     )
 
     fig.update_layout(
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.2,
-            xanchor="center",
-            x=0.5
-        )
+        yaxis_title="",
+        xaxis_title="Number of Responses"
     )
 
     return fig
@@ -277,7 +277,15 @@ app_ui = ui.page_sidebar(
                         choices=["All", "Yes", "No"],
                         selected="All"),
         ui.hr(),
-        "Choose the program for analyzing!"
+        ui.p("Choose what to analyze!"),
+        ui.p("The first filter is used for each single program. For example, "
+             "if it mentions `MISM online`, it will not contain information "
+             "about the MLIS residential."),
+        ui.p("The second filter is for filtering international students and "
+             "domestic students."),
+        ui.p("The third filter helps in seeing the different responses between"
+             " students who need to relocate and those who do not.")
+
     ),
     ui.panel_title("Survey Data Analysis"),
     ui.div(
@@ -300,12 +308,13 @@ app_ui = ui.page_sidebar(
             ui.card(
                 ui.output_ui("importance_bar_chart"),
                 ui.p("This bar chart displays the average importance ratings \
-    participants assigned to various aspects of grad school.")),
+    participants assigned to various aspects of grad school. As the score \
+    increases from 1-5, the importance is increased.")),
             ui.card(
-                ui.output_ui("demo03_pie_chart"),
-                ui.p("This pie chart demonstrates the distribution of \
-    students' primary goal after graduations.")),
-            col_widths=(8, 4)
+                ui.output_ui("web02_bar_chart"),
+                ui.p("This pie chart demonstrates what students look for the \
+    first when looking at the website.")),
+            col_widths=(6, 6)
         ),
         class_="mb-4"
     ),
@@ -345,9 +354,9 @@ def server(input, output, session):
 
     @output
     @render.ui
-    def demo03_pie_chart():
+    def web02_bar_chart():
         filtered_df = get_filtered_data(input, df)
-        return ui.HTML(generate_demo03_pie_chart(filtered_df).
+        return ui.HTML(generate_web02_bar_chart(filtered_df).
                        to_html(full_html=False)) \
             if filtered_df is not None else ui.p("No data available")
 
