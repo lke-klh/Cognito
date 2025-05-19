@@ -7,7 +7,7 @@ DATA_PATH = "final_data.csv"
 
 CODE_TO_PROGRAM = {
     "1": "Law Librarianship Online",
-    "2": "Law Librarianship",
+    "2": "Law Librarianship Residential",
     "3": "MLIS Online",
     "4": "MLIS Residential",
     "5": "MSIM Online",
@@ -112,6 +112,7 @@ def generate_bar_chart(df):
                  labels={"value": "Percentage (%)", "index": "Metric"},
                  title="How do you feel about the website?")
     fig.update_layout(
+        legend_title_text=None,
         yaxis_title="",
         xaxis_title="Answer's Percentage",
         xaxis=dict(
@@ -211,7 +212,7 @@ def generate_web02_bar_chart(df):
         y=web02_counts.index,
         text=web02_counts.values,
         labels={"x": "Number of Responses", "y": "Information Category"},
-        title="What Information Do Students Look for First?"
+        title="What Information Do Students Seek for Their First Term?"
     )
 
     fig.update_layout(
@@ -266,7 +267,7 @@ app_ui = ui.page_sidebar(
                             "MLIS Online",
                             "PhD",
                             "Museology",
-                            "Law Librarianship",
+                            "Law Librarianship Residential",
                             "Law Librarianship Online"],
                         selected="All Participants"
                         ),
@@ -312,8 +313,8 @@ app_ui = ui.page_sidebar(
     increases from 1-5, the importance is increased.")),
             ui.card(
                 ui.output_ui("web02_bar_chart"),
-                ui.p("This pie chart demonstrates what students look for the \
-    first when looking at the website.")),
+                ui.p("This pie chart demonstrates what students seek for their\
+     first term when looking at the website.")),
             col_widths=(6, 6)
         ),
         class_="mb-4"
