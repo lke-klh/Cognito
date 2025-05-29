@@ -30,6 +30,12 @@ WEB_02_LABELS = {
     "9": "Course descriptions"
 }
 
+color_map = {
+        "Agree": "#636EFA",
+        "Disagree": "#EF553B",
+        "Neutral": "#00CC96"
+}
+
 
 def get_filtered_data(input, df):
 
@@ -110,7 +116,8 @@ def generate_bar_chart(df):
 
     fig = px.bar(response_percent, orientation="h", barmode="stack",
                  labels={"value": "Percentage (%)", "index": "Metric"},
-                 title="How do you feel about the website?")
+                 title="How do you feel about the website?",
+                 color_discrete_map=color_map)
     fig.update_layout(
         legend_title_text=None,
         yaxis_title="",
@@ -148,7 +155,9 @@ def generate_pie_chart(df):
 
     fig = px.pie(names=counts.index,
                  values=counts.values,
-                 title="Is this website helpful in general?")
+                 title="Is this website helpful in general?",
+                 color=counts.index,
+                 color_discrete_map=color_map)
 
     fig.update_layout(
         legend=dict(
